@@ -1,32 +1,36 @@
+import time
+import yaml
 import requests as r
 from fake_useragent import UserAgent
 
 
-ua = UserAgent().random #UserAgent(browsers="Chrome", os="Windows",platforms="desktop")
-session = r.Session()
+def load_config(path="config.yaml"):
+    with open(path, encoding='utf-8') as f:
+        return yaml.safe_load(f)
 
-login_headers = {
-    "Content-Type": "application/x-www-form-urlencoded",
-    "User-Agent": ua,
-    "Referer": "https://f-ariel.ru/auth/",
-    "Origin": "https://f-ariel.ru"
-}
 
-login_data = {
-    "AUTH_FORM": "Y",
-    "TYPE": "AUTH",
-    "backurl": "/auth/",
-    "USER_LOGIN": "dmsch",
-    "USER_PASSWORD": "dmsch1",
-    "Login": "Войти"
-}
+def login(session, ua, cfg):
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": ua,
+        "Referer": "https://f-ariel.ru/auth/",
+        "Origin": "https://f-ariel.ru"
+    }
+    data = {
+        "AUTH_FORM": "Y",
+        "TYPE": "AUTH",
+        "backurl": "/auth/",
+        "USER_LOGIN": cfg["auth"]["login"],
+        "USER_PASSWORD": cfg["auth"]["password"],
+        "Login": "Войти"
+    }
 
-session.post("https://f-ariel.ru/auth/?login=yes", data=login_data, headers=login_headers)
-login_check = session.get("https://f-ariel.ru/auth/?register=yes")
+    session.post("https://f-ariel.ru/auth/?login=yes", data=data, headers=headers)
+    check = session.get("https://f-ariel.ru/auth/?register=yes")
+    return "Вы зарегистрированы и успешно авторизовались." in check.text
 
-if "Вы зарегистрированы и успешно авторизовались." in login_check.text:
-    print("Успешная авторизация!")
-    # допилить прочек новых лотов через бесконечный цикл
+
+def check_products(session, ua, cfg):
     headers = {
         "Accept": "*/*",
         "Referer": "https://order.f-ariel.ru/",
@@ -34,38 +38,65 @@ if "Вы зарегистрированы и успешно авторизова
         "User-Agent": ua
     }
 
-    products = session.get("https://order.f-ariel.ru/api/v1/product")
-    print(products.json())
-else:
-    print("Проблемы с логином...")
+    while True:
+        time.sleep(cfg["product_check"]["check_interval"])
+        products = session.get("https://order.f-ariel.ru/api/v1/product", headers=headers).json()
+
+        for product in products:
+            if product["name"] != cfg["product_check"]["name_to_avoid"]:
+                print("Найден другой товар:")
+                print("ID:", product["id"])
+                print("Название:", product["name"])
+                return True
 
 
 
+def make_order(session, ua, cfg):
+    payload = {
+        "first_name": cfg["order"]["first_name"],
+        "middle_name": cfg["order"]["middle_name"],
+        "phone": cfg["order"]["phone"],
+        "email": cfg["order"]["email"],
+        "items": [{
+            "product_id": cfg["order"]["product_id"],
+            "quantity": cfg["order"]["quantity"]
+        }],
+        "comment": cfg["order"]["comment"]
+    }
+
+    headers = {
+        "Accept": "*/*",
+        "Accept-Language": "ru-RU,ru;q=0.9",
+        "Content-Type": "text/plain;charset=UTF-8",
+        "Origin": "https://order.f-ariel.ru",
+        "Referer": "https://order.f-ariel.ru/",
+        "User-Agent": ua
+    }
+
+    while True:
+        response = session.post("https://order.f-ariel.ru/api/v1/buy", json=payload, headers=headers)
+        print(response.text)
+        print(response.status_code)
+        if response.ok:
+            print("Заявка успешно создана!")
+            break
+        else:
+            print("Не удалось оформить заказ, повтор через 3 сек...")
+            time.sleep(3)
 
 
+def main():
+    cfg = load_config()
+    ua = UserAgent().random
+    session = r.Session()
 
-# Покупка
-# buy_payload = {
-#     "first_name": "Маркарян",
-#     "middle_name": "Алексей",
-#     "phone": "71119998833",
-#     "email": "acaz@gmail.com",
-#     "items": [
-#         {
-#             "product_id": 1,
-#             "quantity": 1
-#         }
-#     ],
-#     "comment": "Самовывоз" # адрес куда
-# }
-# headers = {
-#     "Accept": "*/*",
-#     "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-#     "Content-Type": "text/plain;charset=UTF-8",
-#     "Origin": "https://order.f-ariel.ru",
-#     "Referer": "https://order.f-ariel.ru/",
-#     "User-Agent": ua,
-# }
-#
-#
-# buy_request = session.post("https://example.com/api/order", json=buy_payload)
+    if login(session, ua, cfg):
+        print("Авторизация прошла успешно.")
+        if check_products(session, ua, cfg):
+            make_order(session, ua, cfg)
+    else:
+        print("Проблемы с логином.")
+
+
+if __name__ == "__main__":
+    main()
