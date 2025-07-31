@@ -1,4 +1,5 @@
 import time
+import json
 import yaml
 import requests as r
 from fake_useragent import UserAgent
@@ -47,18 +48,18 @@ def check_products(session, ua, cfg):
                 print("Найден другой товар:")
                 print("ID:", product["id"])
                 print("Название:", product["name"])
-                return True
+                return product["id"]
 
 
 
-def make_order(session, ua, cfg):
+def make_order(session, ua, cfg, product_id):
     payload = {
         "first_name": cfg["order"]["first_name"],
         "middle_name": cfg["order"]["middle_name"],
         "phone": cfg["order"]["phone"],
         "email": cfg["order"]["email"],
         "items": [{
-            "product_id": cfg["order"]["product_id"],
+            "product_id": product_id,
             "quantity": cfg["order"]["quantity"]
         }],
         "comment": cfg["order"]["comment"]
@@ -74,7 +75,7 @@ def make_order(session, ua, cfg):
     }
 
     while True:
-        response = session.post("https://order.f-ariel.ru/api/v1/buy", json=payload, headers=headers)
+        response = session.post("https://order.f-ariel.ru/api/v1/buy", data=json.dumps(payload), headers=headers)
         print(response.text)
         print(response.status_code)
         if response.ok:
@@ -92,8 +93,9 @@ def main():
 
     if login(session, ua, cfg):
         print("Авторизация прошла успешно.")
-        if check_products(session, ua, cfg):
-            make_order(session, ua, cfg)
+        product_id = check_products(session, ua, cfg)
+        if product_id:
+            make_order(session, ua, cfg, product_id)
     else:
         print("Проблемы с логином.")
 

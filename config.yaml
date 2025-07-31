@@ -3,14 +3,14 @@ auth:
   password: xxx
 
 product_check:
-  name_to_avoid: "Книга «Детская игрушка: будни военных лет» 1500 р1"
+  name_to_avoid: "Книга «Детская игрушка: будни военных лет» 1500 р"
   check_interval: 1
 
 order:
-  first_name: Маркарян
-  middle_name: Алексей
-  phone: "71119998833"
-  email: acaz@gmail.com
+  first_name: Иванов
+  middle_name: Иван
+  phone: 71119998833
+  email: mail@mail.ru
   comment: Пушкинская ул. д.3
   product_id: 1
   quantity: 1
