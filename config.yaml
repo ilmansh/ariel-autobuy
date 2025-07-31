@@ -1,16 +1,15 @@
 auth:
-  login: xxx
-  password: xxx
+  login: dmsch
+  password: dmsch1
 
 product_check:
-  name_to_avoid: "Книга «Детская игрушка: будни военных лет» 1500 р"
-  check_interval: 1
+  name_to_avoid: "Книга «Детская игрушка: будни военных лет» 1500 р1" # Название товара, которое не планируете покупать
+  check_interval: 1 # Раз в какое время проверять наличие новых товаров
 
 order:
-  first_name: Иванов
-  middle_name: Иван
+  first_name: Иванов # Фамилия (ДА ФАМИЛИЯ, НЕ ИМЯ)
+  middle_name: Иван # Имя
   phone: 71119998833
   email: mail@mail.ru
   comment: Пушкинская ул. д.3
-  product_id: 1
-  quantity: 1
+  quantity: 1 # Количество единиц товара (можно больше 1, но могут возникнуть проблемы)
