@@ -1,6 +1,6 @@
 auth:
-  login: dmsch
-  password: dmsch1
+  login: xxx
+  password: xxx
 
 product_check:
   name_to_avoid: "Книга «Детская игрушка: будни военных лет» 1500 р1" # Название товара, которое не планируете покупать
